@@ -52,6 +52,7 @@ td.n{direction:ltr;text-align:right;font-variant-numeric:tabular-nums;white-spac
 .neg{color:var(--red)!important}.pos{color:var(--green)}tr.tot td{font-weight:800;background:#f4f6fc}
 .pill{padding:3px 10px;border-radius:20px;font-size:11.5px;font-weight:700;white-space:nowrap}.p1{background:#e3f6ec;color:var(--green)}.p2{background:#fff1de;color:var(--amber)}.p3{background:#e6edff;color:var(--blue)}
 .mbar{height:6px;border-radius:4px;background:linear-gradient(90deg,#7c9bf5,#3a6ff0);margin-top:4px}
+.badge{background:#e04848;color:#fff;border-radius:10px;padding:0 7px;font-size:11px;margin-right:auto}.alist{display:grid;gap:12px}.ac{background:#fff;border-radius:16px;padding:14px 18px;box-shadow:var(--sh);display:flex;gap:14px;align-items:flex-start;border-right:6px solid var(--c)}.ac b{display:block;font-size:15.5px;color:var(--c)}.ac .cat{margin-right:auto;font-size:11px;font-weight:700;color:var(--mute);background:#f1f3f9;border-radius:8px;padding:2px 8px;white-space:nowrap}.heat{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}.heat div{border-radius:9px;padding:8px 4px;text-align:center;font-size:11px;min-height:54px}.heat b{display:block;font-size:12.5px}
 .sec{display:none}.sec.on{display:block}.chart{position:relative;height:310px}.chart.s{height:240px}
 .tabs{display:inline-flex;background:#eef1f9;border-radius:12px;padding:3px;margin-bottom:12px}.tabs b{padding:6px 14px;border-radius:9px;cursor:pointer;font-size:13px;color:var(--mute)}.tabs b.on{background:#fff;color:var(--ink);box-shadow:0 2px 6px rgba(0,0,0,.06)}
 .btn{border:1.5px solid #d6dbea;background:#fff;border-radius:10px;padding:6px 12px;font:600 12.5px Cairo;cursor:pointer}
@@ -66,7 +67,7 @@ td.n{direction:ltr;text-align:right;font-variant-numeric:tabular-nums;white-spac
 <div class="app" id="app">
 <aside class="side"><div class="brand"><div class="bl">ص</div><div><b>Al-Serafy</b><small>Cash Flow · Pharmacies Group</small></div></div>
  <div class="navh">الكاش فلو</div><div class="nav">
-  <a data-s="ov" class="on">📊 نظرة عامة</a><a data-s="cm">📅 الشهر الحالي</a><a data-s="yr">🗓 الشهور</a></div>
+  <a data-s="ov" class="on">📊 نظرة عامة</a><a data-s="al">🔔 التنبيهات <span class="badge" id="abadge"></span></a><a data-s="cm">📅 الشهر الحالي</a><a data-s="yr">🗓 الشهور</a></div>
  <div class="navh">الموردين</div><div class="nav"><a data-s="sp">🏭 أرصدة الموردين</a><a data-s="ch">🧾 الشيكات الجاية</a></div>
  <div class="navh">الشركاء</div><div class="nav"><a data-s="pt">👥 مقارنة الشركاء</a></div>
  <div class="user"><i id="ini">R</i><span id="uname"></span><a onclick="location.reload()">خروج</a></div></aside>
@@ -78,7 +79,7 @@ td.n{direction:ltr;text-align:right;font-variant-numeric:tabular-nums;white-spac
   <div class="flt"><label>العرض</label><select id="fv"><option value="المجموعة">المجموعة كلها</option><option value="محمد">د. محمد</option><option value="أحمد">د. أحمد</option><option value="عمرو">د. عمرو</option></select></div>
   <div class="tt upd" id="upd"></div></div>
  <div class="wrap">
-  <section class="sec on" id="ov"></section><section class="sec" id="cm"></section><section class="sec" id="yr"></section>
+  <section class="sec on" id="ov"></section><section class="sec" id="al"></section><section class="sec" id="cm"></section><section class="sec" id="yr"></section>
   <section class="sec" id="sp"></section><section class="sec" id="ch"></section><section class="sec" id="pt"></section>
  </div></div></div>
 <script src="data.js"></script>
@@ -109,7 +110,7 @@ async function enter(){const er=document.getElementById("err");if(!who.value){er
  document.getElementById("uname").textContent=who.value;document.getElementById("ini").textContent=who.value.replace(/^(Dr\.|Eng\.)\s*/,"")[0];init()}
 document.querySelectorAll(".nav a").forEach(a=>a.onclick=()=>{document.querySelectorAll(".nav a").forEach(x=>x.classList.remove("on"));a.classList.add("on");
  document.querySelectorAll(".sec").forEach(x=>x.classList.remove("on"));document.getElementById(a.dataset.s).classList.add("on");
- document.getElementById("title").textContent=a.textContent.replace(/^\S+\s/,"");window.scrollTo(0,0)});
+ document.getElementById("title").textContent=a.childNodes[0].textContent.trim().replace(/^\S+\s/,"");window.scrollTo(0,0)});
 const charts={};function chart(id,cfg){if(charts[id])charts[id].destroy();const el=document.getElementById(id);if(el)charts[id]=new Chart(el,cfg)}
 Chart.defaults.font.family="Cairo";Chart.defaults.color="#6c7593";Chart.defaults.plugins.legend.labels.usePointStyle=true;
 const money={callback:v=>fm(v)},tip={callbacks:{label:c=>(c.dataset.label?c.dataset.label+": ":"")+f(c.raw)}};
@@ -144,7 +145,8 @@ function render(){
  document.getElementById("sub").textContent=(V==="المجموعة"?"المجموعة كلها":"د. "+V)+(S.length?` • ${S[0].label} ← ${S[S.length-1].label}`:"");
  const rec=sum(S,"rec"),pay=sum(S,"pay"),sup=sum(S,"sup"),net=rec-pay,last=S.length?S[S.length-1].close:0,minM=S.length?S.reduce((m,x)=>x.close<m.close?x:m):null;
  const B=S.filter(x=>x.bd),al=D.alert;
- document.getElementById("ov").innerHTML=`
+ if(!S.length){document.getElementById("ov").innerHTML=`<div class="card">مفيش بيانات للعرض ده في الفترة دي. ${V!=="المجموعة"?"بيانات الشركاء بتبدأ من نوفمبر 2026 – اختار السنة 2026 أو كل السنين.":""}</div>`;}
+ if(S.length) document.getElementById("ov").innerHTML=`
  <div class="kpis">${kpi("إجمالي المقبوضات",rec,S.length+" شهر","var(--teal)","💰")}${kpi("إجمالي المدفوعات",pay,"","var(--violet)","💳")}
  ${kpi("منها الموردين",sup,rec?Math.round(sup/rec*100)+"% من المقبوضات":"","var(--amber)","🏭")}${kpi("صافي الفترة",net,"","var(--blue)","📈")}
  ${kpi("رصيد آخر الفترة",last,S.length?S[S.length-1].label:"",last<0?"var(--red)":"var(--green)","🏦")}${kpi("أقل رصيد شهري",minM?minM.close:0,minM?minM.label:"","var(--red)","⚠️")}</div>
@@ -152,7 +154,9 @@ function render(){
  <div class="grid g21"><div class="card"><h3>المقبوضات والمدفوعات والرصيد</h3><div class="cs">شهر بشهر للفترة المختارة</div><div class="chart"><canvas id="c1"></canvas></div></div>
   <div class="card"><h3>أوجه الصرف</h3><div class="cs">${B.length?"للشهور اللي فيها تفصيل ("+B.length+")":"مفيش تفصيل للفترة دي"}</div><div class="chart"><canvas id="c2"></canvas></div></div></div>
  <div class="grid g11"><div class="card"><h3>مصادر المقبوضات</h3><div class="cs">${B.length?"":"مفيش تفصيل للفترة دي"}</div><div class="chart s"><canvas id="c3"></canvas></div></div>
-  <div class="card"><h3>الشركاء في الفترة دي</h3><div class="cs">صافي كل شريك (من نوفمبر 2026)</div><div class="chart s"><canvas id="c4"></canvas></div></div></div>`;
+  <div class="card"><h3>الشركاء في الفترة دي</h3><div class="cs">صافي كل شريك (من نوفمبر 2026)</div><div class="chart s"><canvas id="c4"></canvas></div></div></div>
+ <div class="grid g11"><div class="card"><h3>من رصيد البداية لرصيد النهاية</h3><div class="cs">الفترة المختارة كلها</div><div class="chart s"><canvas id="c8"></canvas></div></div>
+  <div class="card"><h3>صافي كل شهر</h3><div class="cs">أخضر = فائض • أحمر = عجز</div><div class="chart s"><canvas id="c9"></canvas></div></div></div>`;
  chart("c1",{data:{labels:S.map(x=>x.label),datasets:[{type:"bar",label:"مقبوضات",data:S.map(x=>x.rec),backgroundColor:"#7d96ec",borderRadius:6},
   {type:"bar",label:"مدفوعات",data:S.map(x=>x.pay),backgroundColor:"#9fe0bd",borderRadius:6},
   {type:"line",label:"الرصيد آخر الشهر",data:S.map(x=>x.close),borderColor:"#e04848",backgroundColor:"#e04848",tension:.3,yAxisID:"y"}]},
@@ -161,8 +165,17 @@ function render(){
  dn("c2",["موردين – شيكات","موردين – أرصدة","مرتبات","إيجار","مصروفات","أقساط وضرائب"],[sum(B,"chq"),sum(B,"dist"),sum(B,"sal"),sum(B,"rent"),sum(B,"exp"),sum(B,"lt")],["#3a6ff0","#7a5af5","#14a8c2","#f0961e","#16a36a","#e04848"]);
  dn("c3",["بيع الفروع","أبليكيشنز","تعاقدات","أخرى"],[sum(B,"cash"),sum(B,"apps"),sum(B,"cust"),sum(B,"oin")],["#16a36a","#3a6ff0","#f0961e","#9aa3c0"]);
  const keys=new Set(S.map(x=>x.y*12+x.m)),pn=["محمد","أحمد","عمرو"],pc=["#3a6ff0","#16a36a","#f0961e"];
+ const op=S.length?S[0].open:0,oth=pay-sup,wf=[["رصيد البداية",0,op],["+ مقبوضات",op,op+rec],["- موردين",op+rec,op+rec-sup],["- مصروفات ومرتبات",op+rec-sup,op+rec-sup-oth],["رصيد النهاية",0,op+rec-pay]];
+ chart("c8",{type:"bar",data:{labels:wf.map(x=>x[0]),datasets:[{data:wf.map(x=>[x[1],x[2]]),backgroundColor:["#9aa3c0","#16a36a","#3a6ff0","#7a5af5",(op+rec-pay)<0?"#e04848":"#0b1250"],borderRadius:6}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>f(c.raw[1]-c.raw[0])}}},scales:{y:{ticks:money},x:{grid:{display:false}}}}});
+ chart("c9",{type:"bar",data:{labels:S.map(x=>x.label.split(" ")[0]),datasets:[{data:S.map(x=>x.net),backgroundColor:S.map(x=>x.net<0?"#e04848":"#16a36a"),borderRadius:6}]},
+  options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tip},scales:{y:{ticks:money},x:{grid:{display:false}}}}});
  chart("c4",{type:"bar",data:{labels:pn.map(p=>"د. "+p),datasets:[{label:"صافي",data:pn.map(p=>sum(SER[p].filter(x=>keys.has(x.y*12+x.m)),"net")),backgroundColor:pc,borderRadius:8},
   {label:"فاضل يشتري",data:pn.map(p=>sum(SER[p].filter(x=>keys.has(x.y*12+x.m)),"room")),backgroundColor:pc.map(c=>c+"66"),borderRadius:8}]},options:{maintainAspectRatio:false,scales:{y:{ticks:money}},plugins:{tooltip:tip}}});
+ const AL=D.alerts||[],colr={red:"#e04848",amber:"#f0961e",blue:"#3a6ff0",green:"#16a36a"},ico={red:"🚨",amber:"⚠️",blue:"ℹ️",green:"✅"};
+ const nRed=AL.filter(a=>a.level=="red"||a.level=="amber").length;document.getElementById("abadge").textContent=nRed||"";
+ document.getElementById("al").innerHTML=`<div class="kpis">${kpi("تنبيهات عاجلة",AL.filter(a=>a.level=="red").length,"","var(--red)","🚨",1)}${kpi("محتاجة متابعة",AL.filter(a=>a.level=="amber").length,"","var(--amber)","⚠️",1)}${kpi("ملاحظات",AL.filter(a=>a.level=="blue").length,"","var(--blue)","ℹ️",1)}</div>
+ <div class="alist">${AL.map(a=>`<div class="ac" style="--c:${colr[a.level]}"><div style="font-size:24px">${ico[a.level]}</div><div><b>${a.title}</b><div>${a.text}</div></div><span class="cat">${a.cat}</span></div>`).join("")}</div>`;
  // current month
  const endF=fc.length?fc[fc.length-1].close:(act.length?act[act.length-1].close:0),endP=pl.length?pl[pl.length-1].close:0,cmp=C.compare||[];
  document.getElementById("cm").innerHTML=`<div class="kpis">${kpi("رصيد آخر الفعلي",act.length?act[act.length-1].close:0,act.length?"لحد "+dd(act[act.length-1].d):"","var(--green)","✅")}
@@ -193,6 +206,12 @@ function render(){
  document.getElementById("ch").innerHTML=`<div class="kpis">${kpi("شيكات الـ30 يوم",CQ.total30,(CQ.count30||0)+" شيك","var(--n2)","🧾")}${kpi("شيكات الـ60 يوم",CQ.total60,"","var(--blue)","📆")}${kpi("متوسط اليوم (30 يوم)",(CQ.total30||0)/22,"أيام شغل تقريبًا","var(--teal)","📊")}</div>
  <div class="grid g21"><div class="card"><h3>الشيكات المستحقة يوم بيوم</h3><div class="cs">الـ60 يوم الجايين (الجمعة والسبت بيتصرفوا الحد)</div><div class="chart"><canvas id="c6"></canvas></div></div>
  <div class="card"><h3>أكبر الموردين (30 يوم)</h3><div class="scroll"><table><tr><th>المورد</th><th>المبلغ</th></tr>${(CQ.by_supplier||[]).map(r=>`<tr><td>${r.name}</td><td class="n">${f(r.amount)}</td></tr>`).join("")}</table></div></div></div>`;
+ {const days=(CQ.days||[]),mx=Math.max(1,...days.map(x=>x.amount)),map={};days.forEach(x=>map[x.d]=x.amount);
+  const st=new Date(D.today);st.setDate(st.getDate()-((st.getDay()+1)%7));let cells="";const wd=["سبت","حد","اتنين","تلات","أربع","خميس","جمعة"];
+  cells+=wd.map(w=>`<div style="min-height:auto;font-weight:700;color:var(--mute)">${w}</div>`).join("");
+  for(let i=0;i<63;i++){const d=new Date(st);d.setDate(st.getDate()+i);const k=d.toISOString().slice(0,10),v=map[k]||0,a=v/mx;
+   cells+=`<div style="background:${v?`rgba(58,111,240,${.12+a*.75})`:"#f4f6fb"};color:${a>.55?"#fff":"var(--ink)"}"><b>${k.slice(8,10)}/${k.slice(5,7)}</b>${v?fm(v):""}</div>`}
+  document.getElementById("ch").insertAdjacentHTML("beforeend",`<div class="card"><h3>تقويم الشيكات</h3><div class="cs">كل ما اللون أغمق، الشيكات في اليوم أكتر</div><div class="heat">${cells}</div></div>`)}
  chart("c6",{type:"bar",data:{labels:(CQ.days||[]).map(x=>dd(x.d)),datasets:[{label:"شيكات",data:(CQ.days||[]).map(x=>x.amount),backgroundColor:"#3a6ff0",borderRadius:5}]},
   options:{maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:tip},scales:{y:{ticks:money},x:{grid:{display:false}}}}});
  // partners
@@ -203,7 +222,10 @@ function render(){
  <table><tr><th>البند</th>${pn.map(p=>`<th>د. ${p}</th>`).join("")}<th>المجموعة</th></tr>
  ${rows.map(([t,k])=>`<tr><td><b>${t}</b></td>${pn.map(p=>`<td class="n ${cls(sum(PS(p),k))}">${f(sum(PS(p),k))}</td>`).join("")}<td class="n">${f(pn.reduce((a,p)=>a+sum(PS(p),k),0))}</td></tr>`).join("")}</table></div>
  <div class="card"><h3>فاضل يشتري لحد السقف – شهر بشهر</h3><div class="chart"><canvas id="c7"></canvas></div></div>`;
+ if(!SER["محمد"].length){document.getElementById("pt").innerHTML=`<div class="card">بيانات الشركاء مش موجودة في ملف البيانات – شغّل زرار موقع الكاش فلو وارفع data.js الجديد.</div>`;return}
+ document.getElementById("pt").insertAdjacentHTML("beforeend",`<div class="card" style="margin-top:16px"><h3>الرصيد آخر كل شهر لكل شريك</h3><div class="cs">قبل المشتريات الجديدة</div><div class="chart"><canvas id="c10"></canvas></div></div>`);
  const ml=PS("محمد").map(x=>x.label);
+ chart("c10",{type:"line",data:{labels:ml,datasets:pn.map((p,i)=>({label:"د. "+p,data:PS(p).map(x=>x.close),borderColor:pc[i],backgroundColor:pc[i],tension:.3}))},options:{maintainAspectRatio:false,scales:{y:{ticks:money}},plugins:{tooltip:tip}}});
  chart("c7",{type:"bar",data:{labels:ml,datasets:pn.map((p,i)=>({label:"د. "+p,data:PS(p).map(x=>x.room),backgroundColor:pc[i],borderRadius:5}))},options:{maintainAspectRatio:false,scales:{y:{ticks:money},x:{grid:{display:false}}},plugins:{tooltip:tip}}});
 }
 function dayTable(a){if(!a.length)return "<p>مفيش أيام</p>";return `<table><tr><th>اليوم</th><th>مقبوضات</th><th>موردين</th><th>مصروفات</th><th>الرصيد</th></tr>
